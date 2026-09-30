@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stillroom — 螢幕錄影工作室</title>
+  <style>
+    :root { --bg: #f5f3ed; --surface: #fffefa; --text: #30372e; --muted: #7a7e72; --line: #e3e5da; --olive: #566447; --serif: "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif; -webkit-font-smoothing: antialiased; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, a:focus-visible { outline: 3px solid #aab58a; outline-offset: 5px; }
+    svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .page { max-width: 1120px; margin: auto; padding: 0 48px; }
+    .masthead { height: 100px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon { width: 36px; height: 36px; border: 1px solid #cdd2be; border-radius: 11px; display: grid; place-items: center; color: var(--olive); }
+    .brand-name { font-family: Georgia, serif; font-size: 23px; letter-spacing: -.7px; }
+    .brand-name span { color: #8b917e; }
+    .edition, .eyebrow, .section-label { font-size: 10px; letter-spacing: 2.5px; font-weight: 600; }
+    .edition { color: var(--muted); }
+    .intro { padding: 56px 0 32px; display: flex; justify-content: space-between; align-items: end; gap: 24px; }
+    .eyebrow { color: #899075; margin: 0 0 17px; }
+    h1 { font-family: var(--serif); font-size: clamp(28px, 4vw, 40px); font-weight: 500; letter-spacing: 3px; margin: 0 0 16px; }
+    .desc { font-size: 14px; color: var(--muted); line-height: 1.9; margin: 0; }
+    .privacy { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 12px; color: #7c846d; padding-bottom: 7px; }
+    .privacy svg { width: 16px; height: 16px; }
+    .studio { border: 1px solid #dfe2d5; border-radius: 18px; background: var(--surface); padding: 24px; box-shadow: 0 12px 40px #404a3010, 0 2px 4px #404a3003; }
+    .preview-heading { display: flex; align-items: center; justify-content: space-between; margin: 0 0 19px; }
+    .section-label { color: #858b78; letter-spacing: 1.8px; }
+    .state { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: #7c846f; }
+    .state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #a6b18e; }
+    body[data-recording="true"] .state::before { background: #b86854; box-shadow: 0 0 0 4px #b8685414; }
+    .video-wrapper { aspect-ratio: 16 / 8; width: 100%; background: radial-gradient(ellipse at 50% 40%, #f5f5ee, #ebeee3); border: 1px solid #e3e6d9; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
+    .video-wrapper::after { content: ""; position: absolute; inset: 14px; border: 1px solid #a6af941f; border-radius: 4px; pointer-events: none; }
+    video { width: 100%; height: 100%; display: none; background: #1e241d; object-fit: contain; position: relative; z-index: 1; }
+    .placeholder { text-align: center; padding: 24px; }
+    .preview-icon { width: 66px; height: 66px; border: 1px solid #cdd5bd; border-radius: 19px; margin: 0 auto 22px; display: grid; place-items: center; color: #899676; background: #ffffff40; box-shadow: 0 6px 18px #65744d06; }
+    .preview-icon svg { width: 29px; height: 29px; stroke-width: 1; }
+    .placeholder h2 { font-family: var(--serif); font-weight: 400; font-size: 21px; letter-spacing: 2px; margin: 0 0 12px; color: #647151; }
+    .placeholder p { margin: 0; color: #919784; font-size: 12px; line-height: 1.8; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 24px; }
+    .session { display: flex; align-items: center; gap: 13px; }
+    .session-icon { color: #858e75; width: 36px; height: 36px; background: #f2f3ec; border-radius: 50%; display: grid; place-items: center; }
+    .session-title { font-size: 12px; margin-bottom: 5px; }
+    .session-note { color: #939787; font-size: 11px; }
+    .actions { display: flex; align-items: center; gap: 10px; }
+    button { font: inherit; font-size: 13px; font-weight: 500; border: 1px solid transparent; border-radius: 7px; padding: 13px 20px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 9px; transition: background .2s, box-shadow .2s, transform .2s; }
+    button svg { width: 15px; height: 15px; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-start { background: var(--olive); color: #fffef5; box-shadow: 0 3px 6px #42533312; }
+    .btn-start:hover:not(:disabled) { background: #435337; transform: translateY(-1px); box-shadow: 0 5px 12px #42533320; }
+    .btn-stop { background: transparent; border-color: #d9ddcf; color: #6d7561; }
+    .btn-stop:hover:not(:disabled) { background: #f6eae4; border-color: #d8b6a7; color: #995d4a; }
+    .timer { display: none; font-size: 13px; color: #a65d4c; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    #statusBox { display: none; margin-top: 20px; padding: 14px 16px; border-radius: 7px; background: #edf1e5; color: #59694c; font-size: 12px; line-height: 1.9; overflow-wrap: anywhere; }
+    #statusBox[data-error="true"] { background: #f8eae3; color: #995642; }
+    .guide { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 34px 5px 42px; }
+    .step { display: flex; gap: 14px; }
+    .step-number { font: italic 22px Georgia, serif; color: #a8af97; padding-top: 1px; }
+    .step h3 { font-size: 12px; font-weight: 500; margin: 0 0 7px; }
+    .step p { font-size: 11px; line-height: 1.9; color: #8b9080; margin: 0; }
+    footer { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); padding: 22px 0 28px; color: #989c8e; font-size: 10px; letter-spacing: .5px; }
+    footer .signoff { font-family: Georgia, serif; font-style: italic; font-size: 12px; }
+    @media (max-width: 700px) { .page { padding: 0 22px; } .masthead { height: 78px; } .edition { font-size: 8px; letter-spacing: 1px; } .intro { padding-top: 36px; display: block; } .privacy { margin-top: 18px; } .studio { padding: 16px; } .toolbar { flex-wrap: wrap; padding-top: 18px; } .actions { width: 100%; } button { flex: 1; padding: 13px 10px; } .video-wrapper { aspect-ratio: 4 / 3; } .guide { gap: 22px; grid-template-columns: 1fr; margin: 28px 4px; } .step { gap: 18px; } footer { flex-wrap: wrap; } }
+    @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header class="masthead">
+    <div class="brand"><span class="brand-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></span><span class="brand-name">Still<span>room</span></span></div>
+    <span class="edition">YOUR PERSONAL RECORDING STUDIO</span>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="pageTitle">
+      <div><p class="eyebrow">CAPTURE THE ESSENTIAL</p><h1 id="pageTitle">讓每一次分享，都清晰從容。</h1><p class="desc">你的專屬螢幕錄影空間。記錄操作、解說想法，讓作業呈現更完整。</p></div>
+      <span class="privacy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></svg>影片僅儲存於你的裝置</span>
+    </section>
+    <section class="studio" aria-label="螢幕錄影工作台">
+      <div class="preview-heading"><span class="section-label">螢幕錄影 / PREVIEW</span><span id="recordingState" class="state">準備就緒</span></div>
+      <div class="video-wrapper">
+        <div id="placeholderText" class="placeholder"><div class="preview-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="5" width="24" height="17" rx="3"/><path d="M12 27h8m-4-5v5"/><path d="m14 10 6 4-6 4z"/></svg></div><h2>精彩，從這裡開始。</h2><p>選擇你想分享的畫面，開始錄製。<br>完成後，即可在此預覽影片。</p></div>
+        <video id="previewVideo" controls playsinline aria-label="錄影預覽"></video>
+      </div>
+      <div class="toolbar">
+        <div class="session"><span class="session-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11v1a6 6 0 0 0 12 0v-1m-6 7v3m-3 0h6"/></svg></span><div><div class="session-title">畫面與聲音，一起記錄</div><div class="session-note">開始時將請求麥克風與螢幕權限</div></div></div>
+        <div class="actions"><span id="timerText" class="timer" aria-label="錄影時間">● 00:00</span><button id="btnStop" class="btn-stop" onclick="stopCapture()" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>停止並下載</button><button id="btnStart" class="btn-start" onclick="startCapture()"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>開始錄影</button></div>
+      </div>
+      <div id="statusBox" role="status" aria-live="polite"></div>
+    </section>
+    <section class="guide" aria-label="使用步驟">
+      <div class="step"><span class="step-number">01</span><div><h3>允許麥克風</h3><p>開啟收音，為畫面加上你的解說。<br>也可以略過，僅錄製畫面。</p></div></div>
+      <div class="step"><span class="step-number">02</span><div><h3>選擇分享畫面</h3><p>選取螢幕、視窗或瀏覽器分頁，<br>專注呈現你想分享的內容。</p></div></div>
+      <div class="step"><span class="step-number">03</span><div><h3>完成，自動儲存</h3><p>停止後即可預覽，影片會自動下載，<br>讓每一份用心都好好留存。</p></div></div>
+    </section>
+  </main>
+  <footer><span>本機錄製 · 無需登入 · 影片不上傳</span><span class="signoff">A little space for your big ideas.</span></footer>
+</div>
+
+<script>
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let screenStream = null;
+  let micStream = null;
+  let audioContext = null;
+  let timerInterval = null;
+  let secondsElapsed = 0;
+
+  const btnStart = document.getElementById('btnStart');
+  const btnStop = document.getElementById('btnStop');
+  const timerText = document.getElementById('timerText');
+  const statusBox = document.getElementById('statusBox');
+  const previewVideo = document.getElementById('previewVideo');
+  const placeholderText = document.getElementById('placeholderText');
+
+  function updateStatus(message, isError = false) {
+    statusBox.style.display = 'block';
+    statusBox.dataset.error = String(isError);
+    statusBox.textContent = message;
+  }
+
+  function startTimer() {
+    secondsElapsed = 0;
+    timerText.style.display = 'inline';
+    timerText.innerText = '● 00:00';
+    timerInterval = setInterval(() => {
+      secondsElapsed++;
+      const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+      const secs = String(secondsElapsed % 60).padStart(2, '0');
+      timerText.innerText = `● ${mins}:${secs}`;
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerText.style.display = 'none';
+  }
+
+  function getSupportedMimeType() {
+    const types = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4'
+    ];
+    for (const t of types) {
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    }
+    return '';
+  }
+
+  async function startCapture() {
+    btnStart.disabled = true;
+    try {
+      updateStatus('正在請求麥克風權限，請點選「允許」...');
+
+      // 步驟 1：先取得麥克風授權
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        });
+      } catch (micErr) {
+        console.warn('未取得麥克風授權或使用者拒絕，將僅錄製畫面：', micErr);
+        micStream = null;
+      }
+
+      updateStatus('請選擇要錄製的螢幕、視窗或分頁...');
+
+      // 步驟 2：再彈出選擇螢幕/視窗的對話框
+      screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: 'always' },
+        audio: true // 分頁/系統音訊
+      });
+
+      // 監聽使用者點擊瀏覽器底部的「停止共用」
+      screenStream.getVideoTracks()[0].onended = () => {
+        stopCapture();
+      };
+
+      // 步驟 3：使用 Web Audio API 混音
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const destination = audioContext.createMediaStreamDestination();
+
+      if (screenStream.getAudioTracks().length > 0) {
+        const screenSource = audioContext.createMediaStreamSource(screenStream);
+        screenSource.connect(destination);
+      }
+
+      if (micStream && micStream.getAudioTracks().length > 0) {
+        const micSource = audioContext.createMediaStreamSource(micStream);
+        micSource.connect(destination);
+      }
+
+      // 步驟 4：合併畫面與混音後的音軌
+      const combinedTracks = [
+        ...screenStream.getVideoTracks(),
+        ...destination.stream.getAudioTracks()
+      ];
+      const combinedStream = new MediaStream(combinedTracks);
+
+      // 步驟 5：開始錄製
+      recordedChunks = [];
+      const mimeType = getSupportedMimeType();
+      mediaRecorder = new MediaRecorder(combinedStream, mimeType ? { mimeType } : undefined);
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = handleRecordingComplete;
+
+      mediaRecorder.start();
+      startTimer();
+      document.body.dataset.recording = 'true';
+      document.getElementById('recordingState').textContent = '錄製中';
+
+      btnStart.disabled = true;
+      btnStop.disabled = false;
+
+      const hasMic = micStream ? '（含麥克風收音）' : '（無麥克風）';
+      updateStatus(`正在錄製中 ${hasMic}... 請切換至你要示範操作的視窗或分頁。`);
+
+    } catch (err) {
+      // 若在選取螢幕階段按取消，立即釋放已取得的麥克風串流
+      if (micStream) {
+        micStream.getTracks().forEach(t => t.stop());
+        micStream = null;
+      }
+      if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+      if (audioContext && audioContext.state !== 'closed') audioContext.close();
+      btnStart.disabled = false;
+      updateStatus('授權失敗或取消錄影：' + err.message, true);
+    }
+  }
+
+  function stopCapture() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+
+      if (screenStream) {
+        screenStream.getTracks().forEach(t => t.stop());
+      }
+      if (micStream) {
+        micStream.getTracks().forEach(t => t.stop());
+      }
+      if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close();
+      }
+
+      stopTimer();
+      document.body.dataset.recording = 'false';
+      document.getElementById('recordingState').textContent = '錄影完成';
+      btnStart.disabled = false;
+      btnStop.disabled = true;
+    }
+  }
+
+  function handleRecordingComplete() {
+    const mime = mediaRecorder.mimeType || 'video/webm';
+    const finalBlob = new Blob(recordedChunks, { type: mime });
+
+    // 顯示預覽畫面
+    const videoUrl = URL.createObjectURL(finalBlob);
+    if (previewVideo.src.startsWith('blob:')) URL.revokeObjectURL(previewVideo.src);
+    previewVideo.src = videoUrl;
+    previewVideo.style.display = 'block';
+    placeholderText.style.display = 'none';
+
+    // 自動觸發下載
+    const dateStr = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const extension = mime.includes('mp4') ? 'mp4' : 'webm';
+    const filename = `作業錄影_${dateStr}.${extension}`;
+
+    const downloadLink = document.createElement('a');
+    downloadLink.href = videoUrl;
+    downloadLink.download = filename;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    updateStatus(`錄影完成！影片已自動下載為 ${filename}。若瀏覽器未跳出下載，可在預覽畫面上按滑鼠右鍵點選「另存影片」。`);
+  }
+</script>
+
+</body>
+</html>
